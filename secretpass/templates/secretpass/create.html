@@ -1,0 +1,16 @@
+{% extends 'secretpass/base.html' %}
+
+{% block body %}
+<div class="container mt-4">
+    <h5>Create Account</h5>
+    <div id="accountList">
+        <form method="post">
+            {% csrf_token %}
+            {{ form }}
+            <div>
+                <button type="submit" class="btn btn-black w-100">save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock body %}

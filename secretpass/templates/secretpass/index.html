@@ -1,0 +1,32 @@
+{% extends 'secretpass/base.html' %}
+
+{% block body %}
+<div class="container mt-1">
+    {% include 'secretpass/searchAccount.html' %}
+    <div id="accountList">
+        {% for account in accounts %}
+        <div class="row account">
+            <div class="col-7 col-md-10">
+                <h5>{{ account.service }}</h5>
+                <p class="">{{ account.username }}</p>
+                <input id="decryptionResult-{{account.id}}" type="password" class="mx-2 w-50" disabled>
+                <input type="checkbox" onclick="showPassword('decryptionResult-{{account.id}}')">Show
+            </div>
+            <div class="col-2 col-md-1 text-center my-auto"><a href="{% url 'spedit' account.id %}" class=""><i
+                        class="far fa-edit"></i><br>Edit</a></div>
+            <div class="col-3 col-md-1 my-auto text-center">
+                <a id="decryptButton-{{account.id}}" onClick="decryptPassword('/secretpass/api/accounts/{{account.id}}/decrypt_password/', '{{account.id}}', '{{ csrf_token }}')">
+                    <i class="fa fa-key" aria-hidden="true"></i>
+                    <br>Decrypt
+                </a>
+                <a id="copyButton-{{account.id}}" onClick="copyPassword('{{account.id}}')" style="display: none;">
+                    <i class="far fa-clipboard"></i>
+                    <br>Copy
+                </a>
+            </div>
+        </div>
+
+        {% endfor %}
+    </div>
+</div>
+{% endblock body %}
