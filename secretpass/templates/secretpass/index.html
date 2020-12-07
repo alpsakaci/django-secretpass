@@ -5,11 +5,13 @@
     {% include 'secretpass/searchAccount.html' %}
     <div id="accountList">
         {% for account in accounts %}
-        <div class="row account">
+        <div class="row account mt-2 p-2">
             <div class="col-7 col-md-10">
-                <h5>{{ account.service }}</h5>
-                <p class="">{{ account.username }}</p>
-                <input id="decryptionResult-{{account.id}}" type="password" class="mx-2 w-50" disabled>
+                <label class="mx-2 mt-1">Service</label>
+                <input class="mx-2 w-100" value="{{ account.service }}" disabled>
+                <label class="mx-2 mt-1">Username</label>
+                <input class="mx-2 w-100" value="{{ account.username }}" disabled>
+                <input id="decryptionResult-{{account.id}}" type="password" class="mx-2 w-50 mt-1" disabled>
                 <input type="checkbox" onclick="showPassword('decryptionResult-{{account.id}}')">Show
             </div>
             <div class="col-2 col-md-1 text-center my-auto"><a href="{% url 'spedit' account.id %}" class=""><i

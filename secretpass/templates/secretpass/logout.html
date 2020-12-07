@@ -1,5 +1,5 @@
-<!DOCTYPE html>
 {% load static %}
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -22,36 +22,32 @@
 </head>
 
 <body>
+
     <ul class="nav justify-content-center black lighten-4 py-4 sticky-top text-white">
-        <li class="nav-item">
-            <a class="nav-link text-white" href="{% url 'sptrash' %}">
-                <i class="fa fa-trash text-white" aria-hidden="true"></i>
-            </a>
-        </li>
         <li class="nav-item">
             <a class="nav-link text-white" href="{% url 'spindex' %}">
                 <h2>SecretPass</h2>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link text-white" href="{% url 'splogout' %}">
-                <i class="fas fa-sign-out-alt text-white"></i>
-            </a>
-        </li>
     </ul>
-    <div class="container">
-        {% include 'secretpass/menu.html' %}
+
+    <!-- Main content -->
+    <div class="main-content">
+        <!-- Page content -->
+        <div class="container mt--8 pb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-5 col-md-7">
+                    
+                    <div class="card border-0 mb-0">
+                        <div class="card-body px-lg-5 py-lg-5">
+                            <h3 class="mb-4">Logged out</h3>
+                            <a href="{% url 'splogin' %}?next=/secretpass/">Log in again</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    {% include 'secretpass/passwordGenerator.html' %}
-
-    {% block body %}
-    {% endblock body %}
-
-    <script type="text/javascript" src="{% static 'js/generatePassword.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/decryptPasswordRequest.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/passwordInput.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/searchAccount.js' %}"></script>
-
 </body>
 
 </html>

@@ -3,7 +3,11 @@
 {% block body %}
 <div class="container mt-4">
     <h5>Edit Account</h5>
-    <a href="{% url 'spmovetotrash' account_id %}" onclick="return confirm('Account will be moved to trash. Are you sure?');" class="text-danger">Move to Trash</a>
+    {% if account.is_deleted %}
+        <a href="{% url 'sprestore' account.id %}" onclick="return confirm('Account will be restored. Are you sure?');" class="text-danger">Restore</a>
+    {% else %}
+        <a href="{% url 'spmovetotrash' account.id %}" onclick="return confirm('Account will be moved to trash. Are you sure?');" class="text-danger">Move to Trash</a>
+    {% endif %}
     <div id="accountList">
         <form method="post">
             {% csrf_token %}

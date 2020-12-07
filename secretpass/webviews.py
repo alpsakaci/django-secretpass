@@ -1,13 +1,17 @@
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Account
-from .forms import AccountForm, AccountUpdateForm
+from django.contrib.auth.forms import UserCreationForm
+from django.urls import reverse_lazy
+from django.views import generic
+from .forms import AccountForm, AccountUpdateForm, UserRegisterForm
 from .views import AccountViewSet
 from .serializers import AccountSerializer
 from .crypto import encrypt_password, decrypt_password
 
 
-@login_required(login_url="/admin/login")
+@login_required(login_url="/secretpass/login")
 def index(request):
     accounts = Account.get_user_accounts(request.user)
     context = {"accounts": accounts}
@@ -15,7 +19,13 @@ def index(request):
     return render(request, "secretpass/index.html", context)
 
 
-@login_required(login_url="/admin/login")
+class SignUpView(generic.CreateView):
+    form_class = UserRegisterForm
+    success_url = reverse_lazy("spindex")
+    template_name = "secretpass/signup.html"
+
+
+@login_required(login_url="/secretpass/login")
 def create(request):
     if request.method == "POST":
         form = AccountForm(request.POST)
@@ -46,7 +56,7 @@ def create(request):
     return render(request, "secretpass/create.html", context)
 
 
-@login_required(login_url="/admin/login")
+@login_required(login_url="/secretpass/login")
 def edit(request, acc_id):
     if request.method == "POST":
         form = AccountUpdateForm(request.POST)
@@ -80,23 +90,29 @@ def edit(request, acc_id):
         account = get_object_or_404(
             Account.objects.filter(id=acc_id, owner=request.user)
         )
-        password = decrypt_password(account.password)
         form = AccountUpdateForm(
             initial={"service": account.service, "username": account.username}
         )
-        context = {"form": form, "account_id": account.id}
+        context = {"form": form, "account": account}
 
     return render(request, "secretpass/edit.html", context)
 
 
-@login_required(login_url="/admin/login")
+@login_required(login_url="/secretpass/login")
 def movetotrash(request, acc_id):
     Account.move_to_trash(acc_id, request.user)
 
     return redirect(index)
 
 
-@login_required(login_url="/admin/login")
+@login_required(login_url="/secretpass/login")
+def restore(request, acc_id):
+    Account.restore(acc_id, request.user)
+
+    return redirect(index)
+
+
+@login_required(login_url="/secretpass/login")
 def delete(request, acc_id):
     account = get_object_or_404(Account.objects.filter(id=acc_id, owner=request.user))
     account.delete()
@@ -104,7 +120,7 @@ def delete(request, acc_id):
     return redirect(index)
 
 
-@login_required(login_url="/admin/login")
+@login_required(login_url="/secretpass/login")
 def trash(request):
     trash_items = Account.get_trash_items(request.user)
     context = {"accounts": trash_items}
