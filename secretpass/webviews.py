@@ -100,22 +100,25 @@ def edit(request, acc_id):
 
 @login_required(login_url="/secretpass/login")
 def movetotrash(request, acc_id):
-    Account.move_to_trash(acc_id, request.user)
+    if request.method == "POST":
+        Account.move_to_trash(acc_id, request.user)
 
     return redirect(index)
 
 
 @login_required(login_url="/secretpass/login")
 def restore(request, acc_id):
-    Account.restore(acc_id, request.user)
+    if request.method == "POST":
+        Account.restore(acc_id, request.user)
 
     return redirect(index)
 
 
 @login_required(login_url="/secretpass/login")
 def delete(request, acc_id):
-    account = get_object_or_404(Account.objects.filter(id=acc_id, owner=request.user))
-    account.delete()
+    if request.method == "POST":
+        account = get_object_or_404(Account.objects.filter(id=acc_id, owner=request.user))
+        account.delete()
 
     return redirect(index)
 

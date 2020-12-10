@@ -4,11 +4,31 @@
 <div class="container mt-4">
     <h5>Edit Account</h5>
     {% if account.is_deleted %}
-        <a href="{% url 'spdelete' account.id %}" onclick="return confirm('Account will be deleted permanently. There is no way to undo this action. Are you sure?');" class="text-danger">Delete Permanently</a>
-        <hr>
-        <a href="{% url 'sprestore' account.id %}" onclick="return confirm('Account will be restored. Are you sure?');" class="text-danger">Restore</a>
+        <div class="row">
+            <div class="col-6">
+                <form method="post" action="{% url 'sprestore' account.id %}">
+            {% csrf_token %}
+            <div>
+                <button type="submit" class="btn btn-success" onclick="return confirm('Account will be restored. Are you sure?');">Restore</button>
+            </div>
+        </form>
+            </div>
+            <div class="col-6 text-right">
+                <form method="post" action="{% url 'spdelete' account.id %}">
+            {% csrf_token %}
+            <div>
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Account will be deleted permanently. There is no way to undo this action. Are you sure?');">Delete Permanently</button>
+            </div>
+        </form>
+            </div>
+        </div>
     {% else %}
-        <a href="{% url 'spmovetotrash' account.id %}" onclick="return confirm('Account will be moved to trash. Are you sure?');" class="text-danger">Move to Trash</a>
+        <form method="post" action="{% url 'spmovetotrash' account.id %}">
+            {% csrf_token %}
+            <div>
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Account will be moved to trash. Are you sure?');">Move to trash</button>
+            </div>
+        </form>
     {% endif %}
     <div id="accountList">
         <form method="post">
