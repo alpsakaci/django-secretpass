@@ -66,7 +66,7 @@ def create(request):
                     username=username,
                     password=password,
                     masterkey=KeyChecker.get_masterkey(
-                        request.user, base64.b64decode(request.session.get("user_masterkey"))
+                        request.user, request.session.get("user_masterkey")
                     ),
                 )
             else:
@@ -109,7 +109,7 @@ def edit(request, acc_id):
                 acc.password = encrypt_password(
                     password,
                     KeyChecker.get_masterkey(
-                        request.user, base64.b64decode(request.session.get("user_masterkey"))
+                        request.user, request.session.get("user_masterkey")
                     ),
                 )
                 acc.save()
@@ -142,7 +142,7 @@ def decrypt(request, acc_id):
             "plain_password": decrypt_password(
                 account.password,
                 KeyChecker.get_masterkey(
-                    request.user, base64.b64decode(request.session.get("user_masterkey"))
+                    request.user, request.session.get("user_masterkey")
                 ),
             )
         }

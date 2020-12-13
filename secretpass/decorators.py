@@ -51,7 +51,7 @@ def masterkey_required(view_func):
                     keychecker = KeyChecker.objects.get(owner=request.user)
 
                     if check_masterkey(masterkey, keychecker.salt, keychecker.keyhash):
-                        request.session["user_masterkey"] = base64.b64encode(generate_key(masterkey, keychecker.salt)).decode('utf-8')
+                        request.session["user_masterkey"] = masterkey
                         
                         return view_func(request, *args, **kwargs)
                     else:
