@@ -77,3 +77,21 @@ class AccountUpdateForm(forms.Form):
     use_current_password = forms.BooleanField(
         label="Use current password", required=False
     )
+
+
+class MasterKeyRegisterForm(forms.Form):
+    masterkey1 = forms.CharField(
+        label="Masterkey",
+        widget=forms.PasswordInput(attrs={"class": "form-control mb-3"}),
+    )
+    masterkey2 = forms.CharField(
+        label="Confirm Masterkey",
+        widget=forms.PasswordInput(attrs={"class": "form-control mb-3"}),
+    )
+
+
+class SetMasterKeyForm(forms.Form):
+    masterkey = forms.CharField(
+        label="Masterkey",
+        widget=forms.PasswordInput(attrs={"class": "form-control mb-3"}),
+    )

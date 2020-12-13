@@ -1,7 +1,22 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from .crypto import encrypt_password, decrypt_password
+from .crypto import generate_salt, encrypt_password, decrypt_password, generate_key
+
+
+class KeyChecker(models.Model):
+    owner = models.ForeignKey(User, related_name="keychecker", on_delete=models.CASCADE)
+    salt = models.CharField(max_length=24)
+    keyhash = models.CharField(max_length=128)
+
+    @staticmethod
+    def get_masterkey(user, masterkey):
+        checker = KeyChecker.objects.get(owner=user)
+        return generate_key(masterkey, checker.salt)
+
+
+    def __str__(self):
+        return "KeyChecker for [" + self.owner.username + "]"
 
 
 class Account(models.Model):
@@ -16,12 +31,12 @@ class Account(models.Model):
         super(Account, self).save(*args, **kwargs)
 
     @staticmethod
-    def create(owner, service, username, password):
+    def create(owner, service, username, password, masterkey):
         account = Account.objects.create(
             owner=owner,
             service=service,
             username=username,
-            password=encrypt_password(password),
+            password=encrypt_password(password, masterkey),
         )
         account.save()
 

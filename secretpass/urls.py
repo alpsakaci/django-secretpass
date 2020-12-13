@@ -22,6 +22,7 @@ urlpatterns = [
     path("signup/", webviews.SignUpView.as_view(), name="spsignup"),
     path("create/", webviews.create, name="spcreate"),
     path("edit/<int:acc_id>/", webviews.edit, name="spedit"),
+    path("decrypt/<int:acc_id>/", webviews.decrypt, name="spdecrypt"),
     path("movetotrash/<int:acc_id>/", webviews.movetotrash, name="spmovetotrash"),
     path("restore/<int:acc_id>/", webviews.restore, name="sprestore"),
     path("trash/", webviews.trash, name="sptrash"),

@@ -1,18 +1,39 @@
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
-from .models import Account
+from .models import Account, KeyChecker
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
+from django.http import HttpResponse
+import json
 from django.views import generic
-from .forms import AccountForm, AccountUpdateForm, UserRegisterForm
+from .forms import (
+    AccountForm,
+    AccountUpdateForm,
+    UserRegisterForm,
+    MasterKeyRegisterForm,
+    SetMasterKeyForm,
+)
 from .views import AccountViewSet
 from .serializers import AccountSerializer
-from .crypto import encrypt_password, decrypt_password
+from .crypto import (
+    encrypt_password,
+    decrypt_password,
+    hash_masterkey,
+    generate_key,
+    check_masterkey,
+    generate_salt,
+)
+from .decorators import keychecker_required, masterkey_required
+import base64
 
 
 @login_required(login_url="/secretpass/login")
+@keychecker_required
+@masterkey_required
 def index(request):
+    keychecker = KeyChecker.objects.get(owner=request.user)
     accounts = Account.get_user_accounts(request.user)
     context = {"accounts": accounts}
 
@@ -26,6 +47,8 @@ class SignUpView(generic.CreateView):
 
 
 @login_required(login_url="/secretpass/login")
+@keychecker_required
+@masterkey_required
 def create(request):
     if request.method == "POST":
         form = AccountForm(request.POST)
@@ -42,6 +65,9 @@ def create(request):
                     service=service,
                     username=username,
                     password=password,
+                    masterkey=KeyChecker.get_masterkey(
+                        request.user, request.session.get("user_masterkey")
+                    ),
                 )
             else:
                 context = {"form": form}
@@ -57,6 +83,8 @@ def create(request):
 
 
 @login_required(login_url="/secretpass/login")
+@keychecker_required
+@masterkey_required
 def edit(request, acc_id):
     if request.method == "POST":
         form = AccountUpdateForm(request.POST)
@@ -78,7 +106,12 @@ def edit(request, acc_id):
             elif password != "" and password.__eq__(repeat):
                 acc.service = service
                 acc.username = username
-                acc.password = encrypt_password(password)
+                acc.password = encrypt_password(
+                    password,
+                    KeyChecker.get_masterkey(
+                        request.user, request.session.get("user_masterkey")
+                    ),
+                )
                 acc.save()
             else:
                 context = {"form": form, "account_id": acc.id}
@@ -96,6 +129,26 @@ def edit(request, acc_id):
         context = {"form": form, "account": account}
 
     return render(request, "secretpass/edit.html", context)
+
+
+@login_required(login_url="/secretpass/login")
+@keychecker_required
+@masterkey_required
+def decrypt(request, acc_id):
+
+    if request.method == "POST":
+        account = Account.objects.get(owner=request.user, id=acc_id)
+        load = {
+            "plain_password": decrypt_password(
+                account.password,
+                KeyChecker.get_masterkey(
+                    request.user, base64.b64decode(request.session.get("user_masterkey"))
+                ),
+            )
+        }
+        data = json.dumps(load)
+
+        return HttpResponse(data, content_type="application/json")
 
 
 @login_required(login_url="/secretpass/login")
@@ -117,7 +170,9 @@ def restore(request, acc_id):
 @login_required(login_url="/secretpass/login")
 def delete(request, acc_id):
     if request.method == "POST":
-        account = get_object_or_404(Account.objects.filter(id=acc_id, owner=request.user))
+        account = get_object_or_404(
+            Account.objects.filter(id=acc_id, owner=request.user)
+        )
         account.delete()
 
     return redirect(index)

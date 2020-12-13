@@ -17,7 +17,7 @@
             <div class="col-2 col-md-1 text-center my-auto"><a href="{% url 'spedit' account.id %}" class=""><i
                         class="far fa-edit"></i><br>Edit</a></div>
             <div class="col-3 col-md-1 my-auto text-center">
-                <a id="decryptButton-{{account.id}}" onClick="decryptPassword('/secretpass/api/accounts/{{account.id}}/decrypt_password/', '{{account.id}}', '{{ csrf_token }}')">
+                <a id="decryptButton-{{account.id}}" onClick="decryptPassword('{% url 'spdecrypt' account.id %}', '{{account.id}}', '{{ csrf_token }}')">
                     <i class="fa fa-key" aria-hidden="true"></i>
                     <br>Decrypt
                 </a>
