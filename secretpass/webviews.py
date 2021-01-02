@@ -25,6 +25,7 @@ from .crypto import (
     check_masterkey,
     generate_salt,
 )
+from .settings import SP_PASSPHRASE
 from .decorators import keychecker_required, masterkey_required
 import base64
 
@@ -66,7 +67,7 @@ def create(request):
                     username=username,
                     password=password,
                     masterkey=KeyChecker.get_masterkey(
-                        request.user, request.session.get("user_masterkey")
+                        request.user, decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
                     ),
                 )
             else:
@@ -109,7 +110,7 @@ def edit(request, acc_id):
                 acc.password = encrypt_password(
                     password,
                     KeyChecker.get_masterkey(
-                        request.user, request.session.get("user_masterkey")
+                        request.user, decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
                     ),
                 )
                 acc.save()
@@ -142,7 +143,7 @@ def decrypt(request, acc_id):
             "plain_password": decrypt_password(
                 account.password,
                 KeyChecker.get_masterkey(
-                    request.user, request.session.get("user_masterkey")
+                    request.user, decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
                 ),
             )
         }

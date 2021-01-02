@@ -3,7 +3,8 @@ from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
 from .models import KeyChecker
 from .forms import SetMasterKeyForm, MasterKeyRegisterForm
-from .crypto import generate_key, check_masterkey, generate_salt, hash_masterkey
+from .crypto import generate_key, check_masterkey, generate_salt, hash_masterkey, encrypt_password, decrypt_password
+from .settings import SP_PASSPHRASE
 import base64
 
 
@@ -51,7 +52,7 @@ def masterkey_required(view_func):
                     keychecker = KeyChecker.objects.get(owner=request.user)
 
                     if check_masterkey(masterkey, keychecker.salt, keychecker.keyhash):
-                        request.session["user_masterkey"] = masterkey
+                        request.session["user_masterkey"] = encrypt_password(masterkey, bytes(SP_PASSPHRASE, 'utf-8'))
                         
                         return view_func(request, *args, **kwargs)
                     else:
