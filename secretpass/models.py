@@ -1,13 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from .crypto import generate_salt, encrypt_password, decrypt_password, generate_key
+from .crypto import generate_salt, encrypt_password, decrypt_password, generate_key, check_masterkey
 
 
 class KeyChecker(models.Model):
     owner = models.ForeignKey(User, related_name="keychecker", on_delete=models.CASCADE)
     salt = models.CharField(max_length=24)
     keyhash = models.CharField(max_length=128)
+
+    @staticmethod
+    def check_user_key(user, masterkey):
+        checker = KeyChecker.objects.get(owner=user)
+        return check_masterkey(masterkey, checker.salt, checker.keyhash)
 
     @staticmethod
     def get_masterkey(user, masterkey):
