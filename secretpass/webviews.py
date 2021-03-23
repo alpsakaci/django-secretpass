@@ -2,13 +2,13 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
-from .models import Account, KeyChecker
+from secretpass.models import Account
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 import json
 from django.views import generic
-from .forms import (
+from secretpass.forms import (
     AccountForm,
     AccountUpdateForm,
     UserRegisterForm,
@@ -17,25 +17,19 @@ from .forms import (
 )
 from .views import AccountViewSet
 from .serializers import AccountSerializer
-from .crypto import (
-    encrypt_password,
-    decrypt_password,
-    hash_masterkey,
-    generate_key,
-    check_masterkey,
-    generate_salt,
-)
 from .settings import SP_PASSPHRASE
-from .decorators import keychecker_required, masterkey_required
+from secretpass.decorators import keychecker_required, masterkey_required
 import base64
+from secretpass.account_selector import get_accounts_by_user, get_account_by_id, get_accounts_in_trash, search_accounts
+from secretpass.account_service import create_account, update_account, decrypt_account_password, move_to_trash, restore as restore_from_trash
+from secretpass.encryption_service import decrypt_password
 
 
 @login_required(login_url="/secretpass/login")
 @keychecker_required
 @masterkey_required
 def index(request):
-    keychecker = KeyChecker.objects.get(owner=request.user)
-    accounts = Account.get_user_accounts(request.user)
+    accounts = get_accounts_by_user(request.user)
     context = {"accounts": accounts}
 
     return render(request, "secretpass/index.html", context)
@@ -61,15 +55,8 @@ def create(request):
             repeat = form.cleaned_data["repeat"]
 
             if password.__eq__(repeat):
-                Account.create(
-                    owner=request.user,
-                    service=service,
-                    username=username,
-                    password=password,
-                    masterkey=KeyChecker.get_masterkey(
-                        request.user, decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
-                    ),
-                )
+                master_password= decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
+                create_account(request.user, service, username, password, master_password)
             else:
                 context = {"form": form}
                 form.add_error("password", "Password does not match.")
@@ -105,15 +92,8 @@ def edit(request, acc_id):
                 acc.username = username
                 acc.save()
             elif password != "" and password.__eq__(repeat):
-                acc.service = service
-                acc.username = username
-                acc.password = encrypt_password(
-                    password,
-                    KeyChecker.get_masterkey(
-                        request.user, decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
-                    ),
-                )
-                acc.save()
+                master_password= decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
+                update_account(acc, service, username, password, master_password)
             else:
                 context = {"form": form, "account_id": acc.id}
                 form.add_error("password", "Password does not match.")
@@ -139,13 +119,10 @@ def decrypt(request, acc_id):
 
     if request.method == "POST":
         account = Account.objects.get(owner=request.user, id=acc_id)
+        master_password= decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
+        
         load = {
-            "plain_password": decrypt_password(
-                account.password,
-                KeyChecker.get_masterkey(
-                    request.user, decrypt_password(request.session.get("user_masterkey"), bytes(SP_PASSPHRASE, 'utf-8'))
-                ),
-            )
+            "plain_password": decrypt_account_password(account, master_password)
         }
         data = json.dumps(load)
 
@@ -155,7 +132,10 @@ def decrypt(request, acc_id):
 @login_required(login_url="/secretpass/login")
 def movetotrash(request, acc_id):
     if request.method == "POST":
-        Account.move_to_trash(acc_id, request.user)
+        account = get_object_or_404(
+            Account.objects.filter(id=acc_id, owner=request.user)
+        )
+        move_to_trash(account)
 
     return redirect(index)
 
@@ -163,7 +143,10 @@ def movetotrash(request, acc_id):
 @login_required(login_url="/secretpass/login")
 def restore(request, acc_id):
     if request.method == "POST":
-        Account.restore(acc_id, request.user)
+        account = get_object_or_404(
+            Account.objects.filter(id=acc_id, owner=request.user)
+        )
+        restore_from_trash(account)
 
     return redirect(index)
 
@@ -181,7 +164,7 @@ def delete(request, acc_id):
 
 @login_required(login_url="/secretpass/login")
 def trash(request):
-    trash_items = Account.get_trash_items(request.user)
-    context = {"accounts": trash_items}
+    accounts = get_accounts_in_trash(request.user)
+    context = {"accounts": accounts}
 
     return render(request, "secretpass/index.html", context)

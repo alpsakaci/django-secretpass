@@ -1,5 +1,5 @@
-from django.contrib.auth.models import User
 from rest_framework import serializers
+from django.contrib.auth.models import User
 from .models import Account
 
 
@@ -22,9 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-class AccountSerializer(serializers.HyperlinkedModelSerializer):
+class AccountSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    service = serializers.CharField(required=True)
+    username = serializers.CharField(required=True)
     password = serializers.CharField(required=True, write_only=True)
-
-    class Meta:
-        model = Account
-        fields = ["url", "service", "username", "password"]

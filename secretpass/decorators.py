@@ -1,20 +1,21 @@
 from functools import wraps
 from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
-from .models import KeyChecker
+from .models import Profile
 from .forms import SetMasterKeyForm, MasterKeyRegisterForm
-from .crypto import generate_key, check_masterkey, generate_salt, hash_masterkey, encrypt_password, decrypt_password
 from .settings import SP_PASSPHRASE
 import base64
+from secretpass.profile_service import create_profile, check_master_password
+from secretpass.encryption_service import encrypt_password
 
 
 def keychecker_required(view_func):
     @wraps(view_func)
     def check(request, *args, **kwargs):
         try:
-            keychecker = KeyChecker.objects.get(owner=request.user)
+            request.user.profile
             return view_func(request, *args, **kwargs)
-        except ObjectDoesNotExist:
+        except Exception:
             if request.method == "POST":
                 form = MasterKeyRegisterForm(request.POST)
                 if form.is_valid():
@@ -22,10 +23,7 @@ def keychecker_required(view_func):
                     masterkey2 = form.cleaned_data["masterkey2"]
 
                     if masterkey1.__eq__(masterkey2):
-                        checker = KeyChecker(owner=request.user)
-                        checker.salt = generate_salt(encode=True)
-                        checker.keyhash = hash_masterkey(masterkey1, checker.salt)
-                        checker.save()
+                        create_profile(request.user, masterkey1)
 
                         return view_func(request, *args, **kwargs)
                     else:
@@ -49,13 +47,13 @@ def masterkey_required(view_func):
                 form = SetMasterKeyForm(request.POST)
                 if form.is_valid():
                     masterkey = form.cleaned_data["masterkey"]
-                    keychecker = KeyChecker.objects.get(owner=request.user)
-
-                    if check_masterkey(masterkey, keychecker.salt, keychecker.keyhash):
+                    
+                    try:
+                        check_master_password(masterkey, request.user.profile.salt, request.user.profile.master_password)
                         request.session["user_masterkey"] = encrypt_password(masterkey, bytes(SP_PASSPHRASE, 'utf-8'))
                         
                         return view_func(request, *args, **kwargs)
-                    else:
+                    except:
                         form.add_error("masterkey", "Key is not valid.")
             context = {"form": form}
 
