@@ -31,6 +31,7 @@ urlpatterns = [
     path("trash/", webviews.trash, name="sptrash"),
     path("delete/<int:acc_id>/", webviews.delete, name="spdelete"),
     path("api/accounts/search/", views.search_account),
+    path("api/create_user_profile/", views.create_user_profile),
     path("api/verify_master_password/", views.verify_master_password),
     path("api/", include(router.urls)),
     path("api-auth/", include("rest_framework.urls")),

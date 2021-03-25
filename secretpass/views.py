@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework import viewsets
@@ -15,7 +15,7 @@ import string
 import random
 from secretpass.account_selector import get_account_by_id, get_accounts_by_user, get_accounts_in_trash, search_accounts
 from secretpass.account_service import create_account, update_account, decrypt_account_password, move_to_trash, restore
-from secretpass.profile_service import check_master_password
+from secretpass.profile_service import check_master_password, create_profile
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -147,6 +147,16 @@ def verify_master_password(request):
         return Response({'message': 'Master Password is valid.'})
     except ParseError as e:
         raise e
+
+
+@api_view(["POST"])
+def create_user_profile(request):
+    master_password = request.data["master_password"]
+    try:
+        create_profile(request.user, master_password)
+        return Response({'message': 'Profile created.'})
+    except ValidationError as e:
+        raise ParseError(detail="Profile with this user already exists.")
 
 
 @api_view(["POST"])
